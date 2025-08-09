@@ -29,7 +29,7 @@ function check_download {
 
     if [ ! -d "${REPO_PATH}" ]; then
         echo "[DOWNLOAD] Downloading TEC-Tester repository..."
-        if git -C $stepperbrakedirname clone https://github.com/LynxCrew/Tec-Tester.git $stepperbrakebasename; then
+        if git -C $stepperbrakedirname clone https://github.com/Zeanon/Tec-Tester.git $stepperbrakebasename; then
             chmod +x ${REPO_PATH}/install.sh
             chmod +x ${REPO_PATH}/update.sh
             chmod +x ${REPO_PATH}/uninstall.sh
