@@ -218,6 +218,7 @@ class TecTester:
         self.target_temperature = gcmd.get_float("TARGET", self.target_temperature)
         self.enable = gcmd.get_int("ENABLE", self.enable, minval=0, maxval=1)
         gcmd.respond_info(f"TARGET_TEMP={self.target_temperature}")
+        gcmd.respond_info(f"ENABLE={self.enable}")
 
     def get_status(self, eventtime):
         return {
