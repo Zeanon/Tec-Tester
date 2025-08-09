@@ -9,24 +9,24 @@ class TecTester:
         self.printer = config.get_printer()
         self.reactor = self.printer.get_reactor()
         self.name = config.get_name().split()[-1]
-        self.min_temp_cold_side = config.get_float("min_temp_cold_side", default=20)
-        self.min_temp_hot_side = config.get_float("min_temp_hot_side", default=20)
-        self.max_temp_cold_side = config.get_float("max_temp_cold_side", default=80)
-        self.max_temp_hot_side = config.get_float("max_temp_hot_side", default=80)
-        self.hot_side_safety = config.get_float("hot_side_safety", default=10)
-        self.max_deviation = config.get_float("max_deviation", default=60.0)
-        self.dew_point_safety = config.get_float("dew_point_safety", default=5.0)
-        self.dew_point_range = config.get_float("dew_point_range", default=10)
-        self.dew_point_base = config.get_float("dew_point_base", default=30)
-        self.target_temperature = config.get_float("target_temperature", default=50)
+        self.min_temp_cold_side = config.getfloat("min_temp_cold_side", default=20)
+        self.min_temp_hot_side = config.getfloat("min_temp_hot_side", default=20)
+        self.max_temp_cold_side = config.getfloat("max_temp_cold_side", default=80)
+        self.max_temp_hot_side = config.getfloat("max_temp_hot_side", default=80)
+        self.hot_side_safety = config.getfloat("hot_side_safety", default=10)
+        self.max_deviation = config.getfloat("max_deviation", default=60.0)
+        self.dew_point_safety = config.getfloat("dew_point_safety", default=5.0)
+        self.dew_point_range = config.getfloat("dew_point_range", default=10)
+        self.dew_point_base = config.getfloat("dew_point_base", default=30)
+        self.target_temperature = config.getfloat("target_temperature", default=50)
         self.sensor_cold_name = config.get("sensor_cold_name")
         self.sensor_hot_name = config.get("sensor_hot_name")
-        self.enable_delay = config.get_float("enable_delay", 120)
-        self.max_pwm = config.get_float("max_pwm", 1, minval=0, maxval=1)
-        self.smooth_time = config.get_float("smooth_time", 1.0, above=0.0)
-        self.kp = config.get_float("pid_kp", 1.0, above=0.0)
-        self.ki = config.get_float("pid_ki", 1.0, above=0.0)
-        self.kd = config.get_float("pid_kd", 1.0, above=0.0)
+        self.enable_delay = config.getfloat("enable_delay", 120)
+        self.max_pwm = config.getfloat("max_pwm", 1, minval=0, maxval=1)
+        self.smooth_time = config.getfloat("smooth_time", 1.0, above=0.0)
+        self.kp = config.getfloat("pid_kp", 1.0, above=0.0)
+        self.ki = config.getfloat("pid_ki", 1.0, above=0.0)
+        self.kd = config.getfloat("pid_kd", 1.0, above=0.0)
         self.sensor_cold = None
         self.sensor_hot = None
 
@@ -215,8 +215,8 @@ class TecTester:
 
 
     def cmd_SET_TEC_TESTER(self, gcmd):
-        self.target_temperature = gcmd.getfloat("TARGET", self.target_temperature)
-        self.enable = gcmd.getint("ENABLE", self.enable, minval=0, maxval=1)
+        self.target_temperature = gcmd.get_float("TARGET", self.target_temperature)
+        self.enable = gcmd.get_int("ENABLE", self.enable, minval=0, maxval=1)
         gcmd.respond_info(f"TARGET_TEMP={self.target_temperature}")
 
     def get_status(self, eventtime):
