@@ -13,15 +13,30 @@ class TecTester:
         self.min_temp_hot_side = config.getfloat("min_temp_hot_side", default=20)
         self.max_temp_cold_side = config.getfloat("max_temp_cold_side", default=80)
         self.max_temp_hot_side = config.getfloat("max_temp_hot_side", default=80)
+        # min max temps for both sides ^
+
         self.hot_side_safety = config.getfloat("hot_side_safety", default=10)
+        # Safety that will set the pwm to 0 in the algorithm but not throw an error
+        # Algorithm will do: pwm = 0 if temp_hot >= max_temp_hot - safety
+
         self.max_deviation = config.getfloat("max_deviation", default=60.0)
+        # Maximum deviation between the 2 sides of the peltiers
+
         self.dew_point_safety = config.getfloat("dew_point_safety", default=5.0)
+        # Safety for the dew point, internal lower limit will be dew point + safety
+
         self.dew_point_range = config.getfloat("dew_point_range", default=10)
         self.dew_point_base = config.getfloat("dew_point_base", default=30)
+        # Values to randomize the dew point for testing
+
         self.target_temperature = config.getfloat("target_temperature", default=50)
+        # Target temp for the cold side
         self.sensor_cold_name = config.get("sensor_cold_name")
         self.sensor_hot_name = config.get("sensor_hot_name")
+
         self.enable_delay = config.getfloat("enable_delay", 120)
+        # Safety for watermark, if the peltiers have been disabled, we have to wait at least this amount of seconds before they can be reenabled
+
         self.max_pwm = config.getfloat("max_pwm", 1, minval=0, maxval=1)
         self.smooth_time = config.getfloat("smooth_time", 1.0, above=0.0)
         self.kp = config.getfloat("pid_kp", 1.0, above=0.0)
@@ -32,6 +47,7 @@ class TecTester:
 
         self.enable = 0
 
+        # Normal PID code stuff below
         self.prev_err = 0.0
         self.prev_der = 0.0
         self.int_sum = 0.0
@@ -88,6 +104,7 @@ class TecTester:
         )
 
     def callback(self, eventtime):
+        # Check temp limits and error out if exceeded
         temp_cold = self.sensor_cold.get_status(eventtime)["temperature"]
         temp_hot = self.sensor_hot.get_status(eventtime)["temperature"]
         if temp_cold < self.min_temp_cold_side:
@@ -132,16 +149,19 @@ class TecTester:
                     )
                 )
 
+        # Actual control
         if not self.enable:
             return self.callback_disabled()
         return self.callback_control(temp_cold, temp_hot)
 
+    # If disabled, set to 0 and do nothing
     def callback_disabled(self):
         curtime = self.reactor.monotonic()
         read_time = self.mcu_pwm.get_mcu().estimated_print_time(curtime)
         self.mcu_pwm.set_pwm(read_time, 0)
         return curtime + 0.25
 
+    # Watermark
     def callback_watermark(self, temp_cold, temp_hot, enabled):
         curtime = self.reactor.monotonic()
         dew_point = self.dew_point_base + random.randint(0, self.dew_point_range)
@@ -149,10 +169,12 @@ class TecTester:
         target_temp = self.target_temperature if self.target_temperature > dew_point else dew_point
 
         read_time = self.mcu_pwm.get_mcu().estimated_print_time(curtime)
-        if self.last_value == 0 and read_time < self.last_enable_time + self.enable_delay:
-            return 0.25
 
-        if temp_cold < target_temp or temp_hot >= (self.max_temp_cold_side - self.hot_side_safety) or not enabled:
+        # Early return if the enable delay safety has not elapsed
+        if self.last_value == 0 and read_time < self.last_enable_time + self.enable_delay:
+            return curtime + 0.25
+
+        if temp_cold < target_temp or temp_hot >= (self.max_temp_hot_side - self.hot_side_safety) or not enabled:
             if self.last_value == 1:
                 self.last_enable_time = read_time
             self.last_value = 0
@@ -190,14 +212,14 @@ class TecTester:
         pwm = self.max_pwm - so
 
         # update the heater
-        if temp_hot >= (self.max_temp_cold_side - self.hot_side_safety) or not enabled:
+        if temp_hot >= (self.max_temp_hot_side - self.hot_side_safety) or not enabled:
             pwm = 0.0
         self.mcu_pwm.set_pwm(read_time, pwm)
         # update the previous values
         self.prev_temp = temp_cold
         self.prev_temp_time = read_time
         self.prev_der = dc
-        if temp_hot < (self.max_temp_cold_side - self.hot_side_safety) and enabled:
+        if temp_hot < (self.max_temp_hot_side - self.hot_side_safety) and enabled:
             self.prev_err = err
             if o == so:
                 # not saturated so an update is allowed
@@ -219,6 +241,7 @@ class TecTester:
         self.enable = gcmd.get_int("ENABLE", self.enable, minval=0, maxval=1)
         gcmd.respond_info(f"TARGET_TEMP={self.target_temperature}")
         gcmd.respond_info(f"ENABLE={self.enable}")
+        # Normal Klipper stuff, just set the parameters and put then write them to console
 
     def get_status(self, eventtime):
         return {
